@@ -1,0 +1,37 @@
+{
+  "name": "wiki-events-snapshot",
+  "version": "1.0.0",
+  "description": "dom snapshot serializer / deserializer for wiki-events",
+  "main": "wiki-events-snapshot.js",
+  "scripts": {
+    "build": "parcel build ./wiki-events-snapshot.js --global '$wes'",
+    "dev": "parcel watch ./wiki-events-snapshot.js --global '$wes'",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mum-never-proud/wiki-events-snapshot.git"
+  },
+  "keywords": [
+    "wiki",
+    "events",
+    "snapshot"
+  ],
+  "author": "mum-never-proud",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mum-never-proud/wiki-events-snapshot/issues"
+  },
+  "homepage": "https://github.com/mum-never-proud/wiki-events-snapshot#readme",
+  "devDependencies": {
+    "@babel/core": "7.10.4",
+    "@babel/preset-env": "7.10.4",
+    "eslint": "7.3.1",
+    "jest": "26.1.0",
+    "parcel": "1.12.4"
+  },
+  "dependencies": {
+    "uniqid": "5.2.0"
+  }
+}
