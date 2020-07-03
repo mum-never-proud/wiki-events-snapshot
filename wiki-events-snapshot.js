@@ -12,20 +12,21 @@ export function createSnapshot(node = {}) {
     snapshot.__we_id__ = uid();
     snapshot.attrs = [];
     snapshot.childNodes = Array.from(node.childNodes || [])
-      .map(childNode => createSnapshot(childNode));
+      .map((childNode) => createSnapshot(childNode));
     snapshot.tagName = node.tagName;
     snapshot.type = node.nodeType;
 
     Array.from(node.attributes || [])
-      .forEach(attr => snapshot.attrs.push({
+      .forEach((attr) => snapshot.attrs.push({
         name: attr.name === 'class' ? 'className' : attr.name,
-        value: attr.value
+        value: attr.value,
       }));
 
     if (node.nodeType === Node.TEXT_NODE) {
       snapshot.textContent = node.textContent;
     }
 
+    // eslint-disable-next-line no-param-reassign
     node.__we_id__ = snapshot.__we_id__;
 
     return snapshot;
@@ -36,7 +37,7 @@ export function createSnapshot(node = {}) {
 
 export function rebuildSnapshot(snapshot = {}) {
   switch (snapshot.type) {
-    case Node.ELEMENT_NODE:
+    case Node.ELEMENT_NODE: {
       const ele = document.createElement(snapshot.tagName);
 
       if (snapshot.attrs) {
@@ -45,12 +46,13 @@ export function rebuildSnapshot(snapshot = {}) {
       }
 
       snapshot.childNodes
-        .forEach(childNode => ele.appendChild(rebuildSnapshot(childNode)));
+        .forEach((childNode) => ele.appendChild(rebuildSnapshot(childNode)));
 
-        return ele;
+      return ele;
+    }
     case Node.TEXT_NODE:
       return document.createTextNode(snapshot.textContent);
     default:
-      return;
+      return null;
   }
 }
