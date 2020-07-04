@@ -1,52 +1,98 @@
 import uid from 'uniqid';
 
 /**
- * a very basic dom snapshot functionalities
- * it doesnt cover edge cases
- * definitely needs improvement which will be improved in later versions
+ * a very basic dom snapshot methods
+ * which doesnt cover edge cases and  will be improved in upcoming versions
 */
 
-export function createSnapshot(node = {}) {
-  if (node.nodeType) {
-    const snapshot = {};
-    snapshot.__we_id__ = uid();
-    snapshot.attrs = [];
-    snapshot.childNodes = Array.from(node.childNodes || [])
-      .map((childNode) => createSnapshot(childNode));
-    snapshot.tagName = node.tagName;
-    snapshot.type = node.nodeType;
-
-    Array.from(node.attributes || [])
-      .forEach((attr) => snapshot.attrs.push({
-        name: attr.name === 'class' ? 'className' : attr.name,
-        value: attr.value,
-      }));
-
-    if (node.nodeType === Node.TEXT_NODE) {
-      snapshot.textContent = node.textContent;
-    }
-
-    // eslint-disable-next-line no-param-reassign
-    node.__we_id__ = snapshot.__we_id__;
-
-    return snapshot;
-  }
-
-  return {};
+function serializeAttributes(attrs = []) {
+  return Array.from(attrs)
+    .map((attr) => ({
+      name: attr.name === 'class' ? 'className' : attr.name,
+      value: attr.value,
+    }));
 }
 
-export function rebuildSnapshot(snapshot = {}) {
+function serializeChildNodes(childNodes = [], cb) {
+  return Array.from(childNodes)
+    .map((childNode) => cb(childNode));
+}
+
+export function createSnapshot(node = {}, recursive = true) {
+  const id = node.__we_id__ || uid();
+
+  if (!node.__we_id__) {
+    // eslint-disable-next-line no-param-reassign
+    node.__we_id__ = id;
+  }
+
+  switch (node.nodeType) {
+    case Node.COMMENT_NODE:
+      return {
+        __we_id__: id,
+        textContent: node.textContent,
+        type: Node.COMMENT_NODE,
+      };
+    case Node.DOCUMENT_NODE:
+      return {
+        __we_id__: id,
+        childNodes: recursive ? serializeChildNodes(node.childNodes, createSnapshot) : [],
+        type: node.nodeType,
+      };
+    case Node.DOCUMENT_TYPE_NODE:
+      return {
+        __we_id__: id,
+        name: node.name,
+        publicId: node.publicId,
+        systemId: node.systemId,
+        type: node.nodeType,
+      };
+    case Node.ELEMENT_NODE:
+      return {
+        __we_id__: id,
+        attrs: serializeAttributes(node.attributes),
+        childNodes: recursive ? serializeChildNodes(node.childNodes, createSnapshot) : [],
+        tagName: node.tagName,
+        type: node.nodeType,
+      };
+    case Node.TEXT_NODE:
+      return {
+        __we_id__: id,
+        textContent: node.textContent,
+        type: node.nodeType,
+      };
+    default:
+      return {};
+  }
+}
+
+export function rebuildSnapshot(snapshot = {}, withId = false) {
   switch (snapshot.type) {
+    case Node.COMMENT_NODE:
+      return document.createComment(snapshot.textContent);
+    case Node.DOCUMENT_NODE: {
+      const ele = document.implementation.createDocument(null, '', null);
+
+      snapshot.childNodes
+        .forEach((childNode) => ele.appendChild(rebuildSnapshot(childNode, withId)));
+
+      return ele;
+    }
+    case Node.DOCUMENT_TYPE_NODE:
+      return document.implementation.createDocumentType(
+        snapshot.name, snapshot.systemId, snapshot.publicId,
+      );
     case Node.ELEMENT_NODE: {
       const ele = document.createElement(snapshot.tagName);
 
-      if (snapshot.attrs) {
-        snapshot.attrs
-          .forEach(({ name, value }) => ele.setAttribute(name === 'className' ? 'class' : name, value));
-      }
-
+      snapshot.attrs
+        .forEach(({ name, value }) => ele.setAttribute(name === 'className' ? 'class' : name, value));
       snapshot.childNodes
-        .forEach((childNode) => ele.appendChild(rebuildSnapshot(childNode)));
+        .forEach((childNode) => ele.appendChild(rebuildSnapshot(childNode, withId)));
+
+      if (withId) {
+        ele.setAttribute('data-we-id', snapshot.__we_id__);
+      }
 
       return ele;
     }
