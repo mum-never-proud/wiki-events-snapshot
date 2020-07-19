@@ -5,11 +5,47 @@ import uid from 'uniqid';
  * which doesnt cover edge cases and  will be improved in upcoming versions
 */
 
+function isAbsoluteURL(url) {
+  return /^(?:[a-z]+:)?\/\//.test(url);
+}
+
+function toAbsoluteURL(base, url) {
+  if (typeof url === 'string') {
+    if (isAbsoluteURL(url)) {
+      return url;
+    }
+
+    const baseFragements = base.split('/');
+    const urlFragments = url.split('/');
+
+    baseFragements.pop();
+
+    urlFragments.forEach((urlFragment) => {
+      if (urlFragment === '..') {
+        baseFragements.pop();
+      } else if (urlFragment === '.');
+      else {
+        baseFragements.push(urlFragment);
+      }
+    });
+
+    return baseFragements.join('/');
+  }
+
+  return null;
+}
+
+function attrContainsURL(attr) {
+  return ['href', 'src'].includes(attr);
+}
+
 function serializeAttributes(attrs = []) {
   return Array.from(attrs)
     .map((attr) => ({
       name: attr.name === 'class' ? 'className' : attr.name,
-      value: attr.value,
+      value: attrContainsURL(attr.name)
+        ? toAbsoluteURL(window.location.href, attr.value)
+        : attr.value,
     }));
 }
 
