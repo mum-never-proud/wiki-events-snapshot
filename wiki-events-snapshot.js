@@ -132,8 +132,12 @@ export function rebuildSnapshot(snapshot = {}, withId = false) {
 
       return ele;
     }
-    case Node.TEXT_NODE:
-      return document.createTextNode(snapshot.textContent);
+    case Node.TEXT_NODE: {
+      const textNode = document.createTextNode(snapshot.textContent);
+      textNode.__we_id__ = snapshot.__we_id__;
+
+      return textNode;
+    }
     default:
       return null;
   }
